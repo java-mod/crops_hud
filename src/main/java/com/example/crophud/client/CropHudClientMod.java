@@ -37,7 +37,7 @@ public class CropHudClientMod implements ClientModInitializer {
 
     // Layout constants — package-visible so HudEditScreen can use them.
     static final int HUD_MARGIN       = 8;
-    static final int CARD_HEIGHT      = 86;   // 6 data rows × 10px + header 26px
+    static final int CARD_HEIGHT      = 76;   // 5 data rows × 10px + header 26px
     private static final int CARD_PADDING_X = 6;
     private static final int CARD_PADDING_Y = 5;
     private static final int ROW_GAP        = 10;
@@ -112,7 +112,6 @@ public class CropHudClientMod implements ClientModInitializer {
         Text specialLabel = Text.translatable("crophud.hud.special_label");
         Text activeLabel  = Text.translatable("crophud.hud.active_label");
         Text valueLabel   = Text.translatable("crophud.hud.value_label");
-        Text hourlyLabel  = Text.translatable("crophud.hud.value_per_hour_label");
         Text title        = Text.translatable("crophud.hud.title");
         Text statusText   = Text.translatable(ClientSessionState.active()
                 ? "crophud.hud.status.active" : "crophud.hud.status.paused");
@@ -123,18 +122,15 @@ public class CropHudClientMod implements ClientModInitializer {
                 : Text.translatable("crophud.hud.crop_empty");
         Text unitsVal   = Text.literal(String.valueOf(ClientSessionState.harvestedUnits()));
         Text specialVal = Text.literal(String.valueOf(ClientSessionState.specialDrops()));
-        BigDecimal ph   = ClientSessionState.valuePerHour();
         Text activeVal  = Text.literal(formatDuration(ClientSessionState.activeMillis()));
-        Text valueVal   = Text.literal(formatDecimal(ClientSessionState.totalValue()));
-        Text hourlyVal  = Text.literal(ph != null ? formatDecimal(ph) : "--");
+        Text valueVal   = Text.literal(formatInteger(ClientSessionState.totalValue()));
 
         int labelW = Math.max(
                 Math.max(client.textRenderer.getWidth(cropLabel),
                          client.textRenderer.getWidth(unitsLabel)),
                 Math.max(client.textRenderer.getWidth(specialLabel),
                         Math.max(client.textRenderer.getWidth(activeLabel),
-                                Math.max(client.textRenderer.getWidth(valueLabel),
-                                         client.textRenderer.getWidth(hourlyLabel)))));
+                                 client.textRenderer.getWidth(valueLabel))));
 
         int titleW  = client.textRenderer.getWidth(title);
         int statusW = client.textRenderer.getWidth(statusText) + 10;
@@ -143,8 +139,7 @@ public class CropHudClientMod implements ClientModInitializer {
                 Math.max(rowWidth(client, unitsVal,   false, labelW),
                         Math.max(rowWidth(client, specialVal, false, labelW),
                                 Math.max(rowWidth(client, activeVal, false, labelW),
-                                        Math.max(rowWidth(client, valueVal,  false, labelW),
-                                                 rowWidth(client, hourlyVal, false, labelW))))));
+                                         rowWidth(client, valueVal,  false, labelW)))));
 
         return Math.max(titleW + statusW + 12, rowsW) + (CARD_PADDING_X * 2);
     }
@@ -159,9 +154,7 @@ public class CropHudClientMod implements ClientModInitializer {
 
         // --- Gather display values ---
         String time       = formatDuration(ClientSessionState.activeMillis());
-        String value      = formatDecimal(ClientSessionState.totalValue());
-        BigDecimal ph     = ClientSessionState.valuePerHour();
-        String hourly     = ph != null ? formatDecimal(ph) : "--";
+        String value      = formatInteger(ClientSessionState.totalValue());
         int    specials   = ClientSessionState.specialDrops();
         Text statusText   = Text.translatable(ClientSessionState.active()
                 ? "crophud.hud.status.active" : "crophud.hud.status.paused");
@@ -181,16 +174,13 @@ public class CropHudClientMod implements ClientModInitializer {
         Text activeVal    = Text.literal(time);
         Text valueLabel   = Text.translatable("crophud.hud.value_label");
         Text valueVal     = Text.literal(value);
-        Text hourlyLabel  = Text.translatable("crophud.hud.value_per_hour_label");
-        Text hourlyVal    = Text.literal(hourly);
 
         int labelW  = Math.max(
                 Math.max(client.textRenderer.getWidth(cropLabel),
                          client.textRenderer.getWidth(unitsLabel)),
                 Math.max(client.textRenderer.getWidth(specialLabel),
                         Math.max(client.textRenderer.getWidth(activeLabel),
-                                Math.max(client.textRenderer.getWidth(valueLabel),
-                                         client.textRenderer.getWidth(hourlyLabel)))));
+                                 client.textRenderer.getWidth(valueLabel))));
         int statusW = client.textRenderer.getWidth(statusText) + 10;
 
         // --- Draw card background (skipped when user has disabled it) ---
@@ -228,8 +218,6 @@ public class CropHudClientMod implements ClientModInitializer {
         drawRow(ctx, client, activeLabel,  activeVal,  null, textX, r + ROW_GAP * 3, 0xD9C3D6, 0xFFFFF1B8, labelW);
         // Row 4 — 예상 수익
         drawRow(ctx, client, valueLabel,   valueVal,   null, textX, r + ROW_GAP * 4, 0xD9C3D6, 0xFFB7FF9C, labelW);
-        // Row 5 — 시간당 수익
-        drawRow(ctx, client, hourlyLabel,  hourlyVal,  null, textX, r + ROW_GAP * 5, 0xD9C3D6, 0xFF9EDCFF, labelW);
     }
 
     // -------------------------------------------------------------------------
@@ -317,6 +305,14 @@ public class CropHudClientMod implements ClientModInitializer {
         DecimalFormat fmt = new DecimalFormat("#,##0.##", sym);
         fmt.setMinimumFractionDigits(0);
         fmt.setMaximumFractionDigits(2);
+        return fmt.format(value);
+    }
+
+    static String formatInteger(BigDecimal value) {
+        DecimalFormatSymbols sym = DecimalFormatSymbols.getInstance(Locale.ROOT);
+        DecimalFormat fmt = new DecimalFormat("#,##0", sym);
+        fmt.setMaximumFractionDigits(0);
+        fmt.setRoundingMode(java.math.RoundingMode.DOWN);
         return fmt.format(value);
     }
 
