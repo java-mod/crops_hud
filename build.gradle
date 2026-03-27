@@ -1,0 +1,132 @@
+plugins {
+    id 'fabric-loom' version "${loom_version}"
+    id 'maven-publish'
+}
+
+// ---------------------------------------------------------------------------
+// Version management
+// ---------------------------------------------------------------------------
+// CI / GitHub Actions:
+//   Pass  -Pmod_version_override=1.0.0  (read from the git tag by the workflow).
+//   The counter file is ignored and not modified.
+//
+// Local builds:
+//   Version is assembled from gradle.properties (mod_version_base = "MAJOR.MINOR")
+//   and build_counter.txt (PATCH, auto-incremented on every build/release task).
+//
+//   Running  ./gradlew build   → compiles, bumps counter (e.g. 1.0.1, 1.0.2 …)
+//   Running  ./gradlew release → same, then copies JAR to releases/
+// ---------------------------------------------------------------------------
+
+def modVersion
+
+if (hasProperty('mod_version_override')) {
+    // ── CI path: version comes from the git tag (e.g. v1.0.0 → 1.0.0)
+    modVersion = mod_version_override as String
+    logger.lifecycle("==> CI release  version: ${modVersion}")
+} else {
+    // ── Local path: auto-incrementing patch counter
+    def counterFile  = file("build_counter.txt")
+    def baseVersion  = findProperty('mod_version_base') ?: '1.0'
+    int buildCounter = counterFile.exists() ? counterFile.text.trim().toInteger() : 0
+
+    def buildTasks = ['build', 'release', ':build', ':release']
+    if (gradle.startParameter.taskNames.any { buildTasks.contains(it) }) {
+        buildCounter++
+        counterFile.text = buildCounter.toString()
+        logger.lifecycle("==> Local build #${buildCounter}  version: ${baseVersion}.${buildCounter}")
+    }
+
+    modVersion = "${baseVersion}.${buildCounter}"
+}
+version = "${modVersion}+mc${minecraft_version}"
+group   = project.maven_group
+
+base {
+    archivesName = project.archives_base_name
+}
+
+repositories {
+    maven {
+        name = 'Fabric'
+        url  = 'https://maven.fabricmc.net/'
+    }
+    mavenCentral()
+}
+
+dependencies {
+    minecraft         "com.mojang:minecraft:${project.minecraft_version}"
+    mappings          "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+
+    // Compile against the full Fabric API so the IDE / compiler can resolve all symbols.
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+    // Jar-in-Jar: bundle only the modules actually used by this mod.
+    // Users only need Fabric Loader — no separate Fabric API download required.
+    def apiVer = project.fabric_api_version
+    [
+        "fabric-command-api-v2",          // /hud command registration
+        "fabric-lifecycle-events-v1",     // ClientTickEvents, ClientPlayConnectionEvents
+        "fabric-key-binding-api-v1",      // KeyBindingHelper (HUD editor keybind)
+        "fabric-message-api-v1",          // ClientSendMessageEvents
+        "fabric-networking-api-v1",       // ClientPlayConnectionEvents transitive dep
+        "fabric-rendering-v1",            // HudLayerRegistrationCallback, IdentifiedLayer
+        "fabric-entity-events-v1",        // ClientPlayerBlockBreakEvents
+        "fabric-events-interaction-v0",   // UseBlockCallback
+    ].each { modName ->
+        include fabricApi.module(modName, apiVer)
+    }
+}
+
+processResources {
+    // Expose only the short semantic version (no +mc suffix) to fabric.mod.json
+    inputs.property 'version', modVersion
+
+    filesMatching('fabric.mod.json') {
+        expand 'version': modVersion
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.release = 21
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+    withSourcesJar()
+}
+
+// ---------------------------------------------------------------------------
+// Release task — copies the built JAR to releases/ with the full version name
+// ---------------------------------------------------------------------------
+
+def releasesDir = file("releases")
+
+task copyRelease(type: Copy, dependsOn: jar) {
+    description = 'Copies the built mod JAR into releases/ with a versioned filename.'
+    from(jar.archiveFile)
+    into(releasesDir)
+    // Rename to canonical form: crophud-1.0.42+mc1.21.4.jar
+    rename { "${archives_base_name}-${modVersion}+mc${minecraft_version}.jar" }
+    doLast {
+        logger.lifecycle("==> Released: releases/${archives_base_name}-${modVersion}+mc${minecraft_version}.jar")
+    }
+}
+
+task release(dependsOn: [build, copyRelease]) {
+    description = 'Builds the mod and copies the JAR to the releases/ folder.'
+    // Ensure copyRelease runs after build (jar is already produced by build)
+    copyRelease.mustRunAfter build
+}
+
+publishing {
+    publications {
+        create('mavenJava', MavenPublication) {
+            artifactId = project.archives_base_name
+            from components.java
+        }
+    }
+}

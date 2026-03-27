@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "crophud",
+  "version": "${version}",
+  "name": "Crop Harvest Session HUD",
+  "description": "Tracks active crop harvesting time and estimated revenue.",
+  "authors": [
+    "whitecod"
+  ],
+  "contact": {},
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "com.example.crophud.client.CropHudClientMod"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.16.10",
+    "minecraft": "~1.21.4",
+    "java": ">=21"
+  }
+}

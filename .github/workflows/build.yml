@@ -1,0 +1,127 @@
+name: Build & Release
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # Release 생성, 태그 push, CHANGELOG.md 커밋에 필요
+
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # git-cliff 및 태그 조회를 위해 전체 히스토리 필요
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      # ── PR은 빌드 확인만, main push는 릴리즈까지 ──────────────────────
+      - name: Determine build type
+        id: ctx
+        run: |
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "IS_RELEASE=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "IS_RELEASE=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ── 다음 버전 계산 (build_counter.txt + gradle.properties) ────────
+      - name: Calculate next version
+        if: steps.ctx.outputs.IS_RELEASE == 'true'
+        id: ver
+        run: |
+          BASE=$(grep '^mod_version_base=' gradle.properties | cut -d= -f2 | tr -d ' \r')
+          COUNTER=$(cat build_counter.txt | tr -d '[:space:]')
+          NEXT=$((COUNTER + 1))
+          echo "VERSION=${BASE}.${COUNTER}" >> "$GITHUB_OUTPUT"
+          echo "COUNTER=${NEXT}"            >> "$GITHUB_OUTPUT"
+          echo "TAG=v${BASE}.${COUNTER}"   >> "$GITHUB_OUTPUT"
+
+      # ── 빌드 ──────────────────────────────────────────────────────────
+      - name: Build (release)
+        if: steps.ctx.outputs.IS_RELEASE == 'true'
+        run: ./gradlew build -Pmod_version_override=${{ steps.ver.outputs.VERSION }}
+
+      - name: Build (PR check)
+        if: steps.ctx.outputs.IS_RELEASE != 'true'
+        run: ./gradlew build
+
+      # ── JAR 아티팩트 업로드 ───────────────────────────────────────────
+      - name: Upload artifact (release)
+        if: steps.ctx.outputs.IS_RELEASE == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: crophud-${{ steps.ver.outputs.VERSION }}
+          path: build/libs/crophud-*.jar
+          if-no-files-found: error
+
+      - name: Upload artifact (dev)
+        if: steps.ctx.outputs.IS_RELEASE != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: crophud-dev
+          path: build/libs/crophud-*.jar
+          if-no-files-found: error
+
+      # ── build_counter.txt 업데이트 + 태그 생성 + push ─────────────────
+      # [skip ci] 를 커밋 메시지에 포함시켜 봇 커밋이 다시 워크플로우를 트리거하지 않도록 함
+      - name: Bump build counter and create tag
+        if: steps.ctx.outputs.IS_RELEASE == 'true'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          echo "${{ steps.ver.outputs.COUNTER }}" > build_counter.txt
+          git add build_counter.txt
+          git commit -m "버전 ${{ steps.ver.outputs.TAG }} 빌드 카운터 업데이트 [skip ci]"
+          git tag ${{ steps.ver.outputs.TAG }}
+          git push origin main --follow-tags
+
+      # ── 체인지로그 생성 ───────────────────────────────────────────────
+
+      - name: Generate release notes (current tag)
+        if: steps.ctx.outputs.IS_RELEASE == 'true'
+        uses: orhun/git-cliff-action@v4
+        id: cliff_release
+        with:
+          config: cliff.toml
+          args: --current --strip header
+
+      - name: Generate full CHANGELOG.md
+        if: steps.ctx.outputs.IS_RELEASE == 'true'
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --output CHANGELOG.md
+
+      - name: Commit CHANGELOG.md
+        if: steps.ctx.outputs.IS_RELEASE == 'true'
+        run: |
+          git add CHANGELOG.md
+          git diff --staged --quiet || \
+            git commit -m "CHANGELOG.md ${{ steps.ver.outputs.TAG }} 업데이트 [skip ci]"
+          git push origin main
+
+      # ── GitHub Release 생성 ───────────────────────────────────────────
+      - name: Create GitHub Release
+        if: steps.ctx.outputs.IS_RELEASE == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Crops HUD ${{ steps.ver.outputs.TAG }}"
+          tag_name: ${{ steps.ver.outputs.TAG }}
+          body: ${{ steps.cliff_release.outputs.content }}
+          files: build/libs/crophud-${{ steps.ver.outputs.VERSION }}+mc1.21.4.jar

@@ -1,0 +1,46 @@
+# Gradle build outputs
+build/
+.gradle/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+out/
+
+# Eclipse
+.classpath
+.factorypath
+.project
+.settings/
+bin/
+
+# VS Code
+.vscode/
+
+# Fabric Loom cache
+.cache/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Compiled class files
+*.class
+
+# Log files
+*.log
+
+# Fabric Loom dev run directory
+run/
+
+# Local release copies (official releases go to GitHub Releases)
+releases/
+
+# Claude Code internal files
+.claude/
+
+# -----------------------------------------------------------------------
+# Version-managed files — DO commit these
+# -----------------------------------------------------------------------
+# build_counter.txt  ← commit so the patch number persists across machines
+# gradle.properties  ← commit: contains mod_version_base

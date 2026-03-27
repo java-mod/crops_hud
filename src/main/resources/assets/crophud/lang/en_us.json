@@ -1,0 +1,59 @@
+{
+  "modmenu.nameTranslation.crophud": "Crop Harvest Session HUD",
+
+  "crophud.hud.title": "Harvest Session",
+  "crophud.hud.crop_label": "Crop",
+  "crophud.hud.crop_empty": "Waiting for crop",
+  "crophud.hud.units_label": "Units",
+  "crophud.hud.special_label": "Special",
+  "crophud.hud.active_label": "Active Time",
+  "crophud.hud.value_label": "Est. Value",
+  "crophud.hud.value_per_hour_label": "Value / h",
+  "crophud.hud.status.active": "ACTIVE",
+  "crophud.hud.status.paused": "PAUSED",
+
+  "crophud.anchor.top_left": "Top Left",
+  "crophud.anchor.top_right": "Top Right",
+  "crophud.anchor.center_top": "Center Top",
+  "crophud.anchor.center": "Center",
+  "crophud.anchor.bottom_left": "Bottom Left",
+  "crophud.anchor.bottom_right": "Bottom Right",
+  "crophud.anchor.center_bottom": "Center Bottom",
+
+  "crophud.hud_editor.title": "HUD Position Editor",
+  "crophud.hud_editor.hint": "Drag to reposition  ·  ESC to save",
+
+  "key.categories.crophud": "Crop HUD",
+  "key.crophud.open_editor": "Open HUD Editor",
+
+  "crophud.command.player_only": "This command can only be used by a player.",
+
+  "crophud.command.hud.usage": "Usage: /hud reset | /hud position <anchor> | /hud edit | /hud background on|off | /hud pause <seconds> | /hud lockcrop <crop>|off",
+  "crophud.command.hud.reset": "Harvest session reset.",
+  "crophud.command.hud.position_usage": "Choose a position: top_left, top_right, center_top, center, bottom_left, bottom_right, center_bottom",
+  "crophud.command.hud.position_invalid": "Unknown HUD position: %s",
+  "crophud.command.hud.position_set": "HUD position changed to %s.",
+  "crophud.command.hud.background_on": "On",
+  "crophud.command.hud.background_off": "Off",
+  "crophud.command.hud.background_status": "HUD background: %s",
+  "crophud.command.hud.background_set": "HUD background set to %s.",
+
+  "crophud.command.hud.pause_status": "Current idle pause delay: %d seconds",
+  "crophud.command.hud.pause_set": "Idle pause delay set to %d seconds.",
+
+  "crophud.command.hud.lockcrop_usage": "Usage: /hud lockcrop <crop> | /hud lockcrop off",
+  "crophud.command.hud.lockcrop_current": "Currently locked crop: %s  (use /hud lockcrop off to unlock)",
+  "crophud.command.hud.lockcrop_set": "Crop locked to %s.",
+  "crophud.command.hud.lockcrop_off": "Crop lock removed.",
+
+  "crophud.command.cropprice.usage": "Usage: /cropprice list | /cropprice get <crop> | /cropprice set <crop> <price>",
+  "crophud.command.cropprice.missing_price": "Missing price for crop '%s'. Usage: /cropprice set %s <price>",
+  "crophud.command.cropprice.invalid_price": "Invalid price format: %s",
+  "crophud.command.cropprice.unknown_crop": "Unknown crop: %s",
+  "crophud.command.cropprice.set": "Set crop price: %s = %s",
+  "crophud.command.cropprice.set_with_fortune": "Set crop price: %s = %s (Fortune %d)",
+  "crophud.command.cropprice.get": "%s = %s",
+  "crophud.command.cropprice.empty": "No crop prices configured.",
+  "crophud.command.cropprice.list_header": "Configured crop prices:",
+  "crophud.command.cropprice.list_entry": "- %s = %s"
+}
