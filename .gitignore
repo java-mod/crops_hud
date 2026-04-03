@@ -35,6 +35,7 @@ run/
 
 # Local release copies (official releases go to GitHub Releases)
 releases/
+dist/
 
 # Claude Code internal files
 .claude/
