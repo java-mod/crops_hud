@@ -13,8 +13,6 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.message.v1.ClientSendMessageEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.HudLayerRegistrationCallback;
-import net.fabricmc.fabric.api.client.rendering.v1.IdentifiedLayer;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.option.KeyBinding;
@@ -27,6 +25,9 @@ import net.minecraft.util.Identifier;
 import org.lwjgl.glfw.GLFW;
 
 import java.math.BigDecimal;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
@@ -41,6 +42,7 @@ public class CropHudClientMod implements ClientModInitializer {
     private static final int CARD_PADDING_X = 6;
     private static final int CARD_PADDING_Y = 5;
     private static final int ROW_GAP        = 10;
+    private static final int HUD_LABEL_COLOR = 0xFFD9C3D6;
 
     /** Keybinding that opens the HUD position editor. Unbound by default. */
     public static KeyBinding OPEN_EDITOR_KEY;
@@ -53,12 +55,7 @@ public class CropHudClientMod implements ClientModInitializer {
     public void onInitializeClient() {
         CropHudMod.initializeClient();
 
-        OPEN_EDITOR_KEY = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-                "key.crophud.open_editor",
-                InputUtil.Type.KEYSYM,
-                GLFW.GLFW_KEY_UNKNOWN,
-                "key.categories.crophud"
-        ));
+        OPEN_EDITOR_KEY = KeyBindingHelper.registerKeyBinding(createOpenEditorKeyBinding());
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             CropPriceCommand.register(dispatcher);
@@ -78,9 +75,140 @@ public class CropHudClientMod implements ClientModInitializer {
             }
         });
 
-        HudLayerRegistrationCallback.EVENT.register(layeredDrawer ->
-                layeredDrawer.attachLayerBefore(IdentifiedLayer.CHAT, HUD_LAYER_ID,
-                        (drawContext, tickCounter) -> renderHud(drawContext)));
+        registerHudRendererCompat();
+    }
+
+    private static void registerHudRendererCompat() {
+        try {
+            registerLegacyHudLayer();
+            return;
+        } catch (ReflectiveOperationException ignored) {
+            CropHudMod.LOGGER.info("Legacy HUD registration API not available; trying modern API");
+        }
+
+        try {
+            registerModernHudLayer();
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("Failed to register Crops HUD overlay for this Fabric API version", e);
+        }
+    }
+
+    private static KeyBinding createOpenEditorKeyBinding() {
+        try {
+            Class<?> categoryClass = findKeyBindingCategoryClass();
+            Identifier categoryId = Identifier.of("crophud", "main");
+            Object category;
+
+            try {
+                Method createMethod = categoryClass.getMethod("create", Identifier.class);
+                category = createMethod.invoke(null, categoryId);
+            } catch (ReflectiveOperationException ignored) {
+                category = categoryClass.getConstructor(Identifier.class).newInstance(categoryId);
+            }
+
+            return KeyBinding.class
+                    .getConstructor(String.class, InputUtil.Type.class, int.class, categoryClass)
+                    .newInstance("key.crophud.open_editor", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, category);
+        } catch (ReflectiveOperationException ignored) {
+            CropHudMod.LOGGER.info("Modern keybinding category API not available; using legacy category string");
+        }
+
+        try {
+            return KeyBinding.class
+                    .getConstructor(String.class, InputUtil.Type.class, int.class, String.class)
+                    .newInstance("key.crophud.open_editor", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, "key.categories.crophud");
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("Failed to create editor keybinding for this Minecraft version", e);
+        }
+    }
+
+    private static Class<?> findKeyBindingCategoryClass() throws ClassNotFoundException {
+        for (Class<?> nestedClass : KeyBinding.class.getDeclaredClasses()) {
+            try {
+                nestedClass.getMethod("create", Identifier.class);
+                nestedClass.getConstructor(Identifier.class);
+                return nestedClass;
+            } catch (ReflectiveOperationException ignored) {
+                // Continue searching for the runtime-remapped Category type.
+            }
+        }
+        throw new ClassNotFoundException("KeyBinding.Category");
+    }
+
+    private static void registerLegacyHudLayer() throws ReflectiveOperationException {
+        Class<?> callbackClass = Class.forName("net.fabricmc.fabric.api.client.rendering.v1.HudLayerRegistrationCallback");
+        Class<?> identifiedLayerClass = Class.forName("net.fabricmc.fabric.api.client.rendering.v1.IdentifiedLayer");
+        Object event = callbackClass.getField("EVENT").get(null);
+        Method registerMethod = event.getClass().getMethod("register", callbackClass);
+
+        Object callback = Proxy.newProxyInstance(
+                callbackClass.getClassLoader(),
+                new Class[]{callbackClass},
+                (proxy, method, args) -> {
+                    if (isObjectMethod(method)) {
+                        return handleObjectMethod(proxy, method, args);
+                    }
+
+                    Object layeredDrawer = args[0];
+                    Method attachMethod = findMethod(layeredDrawer.getClass(), "attachLayerBefore", 3);
+                    Object chatLayer = identifiedLayerClass.getField("CHAT").get(null);
+                    Class<?> hudRendererType = attachMethod.getParameterTypes()[2];
+                    Object hudRenderer = createHudRendererProxy(hudRendererType);
+                    attachMethod.invoke(layeredDrawer, chatLayer, HUD_LAYER_ID, hudRenderer);
+                    return null;
+                }
+        );
+
+        registerMethod.invoke(event, callback);
+    }
+
+    private static void registerModernHudLayer() throws ReflectiveOperationException {
+        Class<?> registryClass = Class.forName("net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry");
+        Class<?> vanillaHudElementsClass = Class.forName("net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements");
+        Method attachMethod = findMethod(registryClass, "attachElementBefore", 3);
+        Object chatLayer = vanillaHudElementsClass.getField("CHAT").get(null);
+        Class<?> hudRendererType = attachMethod.getParameterTypes()[2];
+        Object hudRenderer = createHudRendererProxy(hudRendererType);
+        attachMethod.invoke(null, chatLayer, HUD_LAYER_ID, hudRenderer);
+    }
+
+    private static Object createHudRendererProxy(Class<?> hudRendererType) {
+        InvocationHandler handler = (proxy, method, args) -> {
+            if (isObjectMethod(method)) {
+                return handleObjectMethod(proxy, method, args);
+            }
+
+            renderHud((DrawContext) args[0]);
+            return null;
+        };
+
+        return Proxy.newProxyInstance(
+                hudRendererType.getClassLoader(),
+                new Class[]{hudRendererType},
+                handler
+        );
+    }
+
+    private static Method findMethod(Class<?> type, String name, int parameterCount) {
+        for (Method method : type.getMethods()) {
+            if (method.getName().equals(name) && method.getParameterCount() == parameterCount) {
+                return method;
+            }
+        }
+        throw new IllegalStateException("Unable to find method " + name + " on " + type.getName());
+    }
+
+    private static boolean isObjectMethod(Method method) {
+        return method.getDeclaringClass() == Object.class;
+    }
+
+    private static Object handleObjectMethod(Object proxy, Method method, Object[] args) {
+        return switch (method.getName()) {
+            case "toString" -> proxy.getClass().getName();
+            case "hashCode" -> System.identityHashCode(proxy);
+            case "equals" -> proxy == args[0];
+            default -> null;
+        };
     }
 
     // -------------------------------------------------------------------------
@@ -208,16 +336,16 @@ public class CropHudClientMod implements ClientModInitializer {
         // --- Data rows ---
         int r = y + 23;
         // Row 0 — 작물
-        drawRow(ctx, client, cropLabel,    cropVal,   null, textX, r,              0xD9C3D6, 0xFFFDF7FF, labelW);
+        drawRow(ctx, client, cropLabel,    cropVal,   null, textX, r,              HUD_LABEL_COLOR, 0xFFFDF7FF, labelW);
         // Row 1 — 수확량
-        drawRow(ctx, client, unitsLabel,   unitsVal,  null, textX, r + ROW_GAP,    0xD9C3D6, 0xFFE7F4FF, labelW);
+        drawRow(ctx, client, unitsLabel,   unitsVal,  null, textX, r + ROW_GAP,    HUD_LABEL_COLOR, 0xFFE7F4FF, labelW);
         // Row 2 — 특수 드랍  (highlighted in amber when > 0)
         int specialColor = specials > 0 ? 0xFFFFD080 : 0xFFE7F4FF;
-        drawRow(ctx, client, specialLabel, specialVal, null, textX, r + ROW_GAP * 2, 0xD9C3D6, specialColor, labelW);
+        drawRow(ctx, client, specialLabel, specialVal, null, textX, r + ROW_GAP * 2, HUD_LABEL_COLOR, specialColor, labelW);
         // Row 3 — 활성 시간
-        drawRow(ctx, client, activeLabel,  activeVal,  null, textX, r + ROW_GAP * 3, 0xD9C3D6, 0xFFFFF1B8, labelW);
+        drawRow(ctx, client, activeLabel,  activeVal,  null, textX, r + ROW_GAP * 3, HUD_LABEL_COLOR, 0xFFFFF1B8, labelW);
         // Row 4 — 예상 수익
-        drawRow(ctx, client, valueLabel,   valueVal,   null, textX, r + ROW_GAP * 4, 0xD9C3D6, 0xFFB7FF9C, labelW);
+        drawRow(ctx, client, valueLabel,   valueVal,   null, textX, r + ROW_GAP * 4, HUD_LABEL_COLOR, 0xFFB7FF9C, labelW);
     }
 
     // -------------------------------------------------------------------------

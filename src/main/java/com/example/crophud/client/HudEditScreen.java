@@ -3,9 +3,11 @@ package com.example.crophud.client;
 import com.example.crophud.CropHudMod;
 import com.example.crophud.hud.HudAnchor;
 import com.example.crophud.hud.HudPositionStore;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
+import org.lwjgl.glfw.GLFW;
 
 /**
  * Full-screen HUD position editor.
@@ -30,6 +32,7 @@ public class HudEditScreen extends Screen {
     private boolean firstInit = true;
 
     private boolean dragging = false;
+    private boolean wasLeftMouseDown = false;
     private int dragOffsetX;
     private int dragOffsetY;
 
@@ -72,6 +75,8 @@ public class HudEditScreen extends Screen {
 
     @Override
     public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
+        updateDragState(mouseX, mouseY);
+
         // ── Background overlay ────────────────────────────────────────────────
         ctx.fill(0, 0, width, height, 0x7A000000);
 
@@ -110,37 +115,25 @@ public class HudEditScreen extends Screen {
         super.render(ctx, mouseX, mouseY, delta);
     }
 
-    // -------------------------------------------------------------------------
-    // Mouse interaction
-    // -------------------------------------------------------------------------
+    private void updateDragState(int mouseX, int mouseY) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        long windowHandle = client.getWindow().getHandle();
+        boolean leftMouseDown = GLFW.glfwGetMouseButton(windowHandle, GLFW.GLFW_MOUSE_BUTTON_LEFT) == GLFW.GLFW_PRESS;
 
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button == 0 && isOverCard((int) mouseX, (int) mouseY)) {
-            dragging     = true;
-            dragOffsetX  = (int) mouseX - cardX;
-            dragOffsetY  = (int) mouseY - cardY;
-            return true;
-        }
-        return super.mouseClicked(mouseX, mouseY, button);
-    }
-
-    @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dX, double dY) {
-        if (dragging) {
-            int rawX = (int) mouseX - dragOffsetX;
-            int rawY = (int) mouseY - dragOffsetY;
-            cardX = snapX(CropHudClientMod.clamp(rawX, 0, width  - cardWidth));
+        if (leftMouseDown && !wasLeftMouseDown && isOverCard(mouseX, mouseY)) {
+            dragging = true;
+            dragOffsetX = mouseX - cardX;
+            dragOffsetY = mouseY - cardY;
+        } else if (leftMouseDown && dragging) {
+            int rawX = mouseX - dragOffsetX;
+            int rawY = mouseY - dragOffsetY;
+            cardX = snapX(CropHudClientMod.clamp(rawX, 0, width - cardWidth));
             cardY = snapY(CropHudClientMod.clamp(rawY, 0, height - cardHeight));
-            return true;
+        } else if (!leftMouseDown && wasLeftMouseDown) {
+            dragging = false;
         }
-        return super.mouseDragged(mouseX, mouseY, button, dX, dY);
-    }
 
-    @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        if (button == 0) dragging = false;
-        return super.mouseReleased(mouseX, mouseY, button);
+        wasLeftMouseDown = leftMouseDown;
     }
 
     // -------------------------------------------------------------------------

@@ -20,6 +20,7 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.registry.Registries;
+import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.state.property.Properties;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Identifier;
@@ -245,7 +246,8 @@ public class CropHarvestTracker {
                                         SpecialDropRegistry.SpecialDropDef specialDef,
                                         Item normalAlias) {
         int count = 0;
-        for (ItemStack stack : player.getInventory().main) {
+        for (int slot = 0; slot < PlayerInventory.MAIN_SIZE; slot++) {
+            ItemStack stack = player.getInventory().getStack(slot);
             if (isNormalCropItem(stack, item, specialDef)) count += stack.getCount();
             else if (normalAlias != null && isNormalCropItem(stack, normalAlias, specialDef)) count += stack.getCount();
         }
@@ -289,7 +291,8 @@ public class CropHarvestTracker {
     private static int countSpecialItemsByDef(net.minecraft.entity.player.PlayerEntity player,
                                               SpecialDropRegistry.SpecialDropDef def) {
         int count = 0;
-        for (ItemStack stack : player.getInventory().main) {
+        for (int slot = 0; slot < PlayerInventory.MAIN_SIZE; slot++) {
+            ItemStack stack = player.getInventory().getStack(slot);
             if (matchesSpecialDef(stack, def)) count += stack.getCount();
         }
         if (matchesSpecialDef(player.getOffHandStack(), def)) {
