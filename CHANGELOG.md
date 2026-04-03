@@ -1,5 +1,17 @@
 # 변경 이력
 
+## [v1.0.4] — 2026-04-03
+
+### 📦 변경 사항
+- 📝 docs: README 문서로 전환하고 사용 가이드 재작성
+
+Ultraworked with [Sisyphus](https://github.com/code-yeongyu/oh-my-openagent)
+
+Co-authored-by: Sisyphus <clio-agent@sisyphuslabs.ai>
+
+- 버전 v1.0.4 빌드 카운터 업데이트 [skip ci]
+
+
 ## [v1.0.3] — 2026-04-03
 
 ### 📦 변경 사항
@@ -12,6 +24,8 @@
 - 📝 docs: v1.0.3 변경 이력 업데이트
 
 - 버전 v1.0.3 빌드 카운터 업데이트 [skip ci]
+
+- CHANGELOG.md v1.0.3 업데이트 [skip ci]
 
 
 ## [v1.0.2] — 2026-03-27
