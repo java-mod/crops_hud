@@ -1,3 +1,5 @@
+import groovy.json.JsonSlurper
+
 plugins {
     id 'fabric-loom' version "${loom_version}"
     id 'maven-publish'
@@ -19,6 +21,24 @@ plugins {
 // ---------------------------------------------------------------------------
 
 def modVersion
+def minecraftVersion   = (findProperty('minecraft_version') ?: '').toString().trim()
+def yarnMappings       = (findProperty('yarn_mappings') ?: '').toString().trim()
+def loaderVersion      = (findProperty('loader_version') ?: '').toString().trim()
+def fabricApiVersion   = (findProperty('fabric_api_version') ?: '').toString().trim()
+def minecraftDependency = (findProperty('minecraft_dependency') ?: "~${minecraftVersion}").toString().trim()
+boolean bundleFabricApiModules = ((findProperty('bundle_fabric_api_modules') ?: 'true').toString()).toBoolean()
+
+[
+        minecraft_version : minecraftVersion,
+        yarn_mappings     : yarnMappings,
+        loader_version    : loaderVersion,
+        fabric_api_version: fabricApiVersion,
+        minecraft_dependency: minecraftDependency,
+].each { key, value ->
+    if (!value) {
+        throw new GradleException("Missing required Gradle property: ${key}")
+    }
+}
 
 if (hasProperty('mod_version_override')) {
     // ── CI path: version comes from the git tag (e.g. v1.0.0 → 1.0.0)
@@ -29,18 +49,44 @@ if (hasProperty('mod_version_override')) {
     def counterFile  = file("build_counter.txt")
     def baseVersion  = findProperty('mod_version_base') ?: '1.0'
     int buildCounter = counterFile.exists() ? counterFile.text.trim().toInteger() : 0
+    boolean skipBuildCounter = ((findProperty('skip_build_counter')
+            ?: findProperty('local_test_env')
+            ?: System.getenv('SKIP_BUILD_COUNTER')
+            ?: System.getenv('LOCAL_TEST_ENV')
+            ?: 'false').toString()).toBoolean()
 
     def buildTasks = ['build', 'release', ':build', ':release']
-    if (gradle.startParameter.taskNames.any { buildTasks.contains(it) }) {
+    if (!skipBuildCounter && gradle.startParameter.taskNames.any { buildTasks.contains(it) }) {
         buildCounter++
         counterFile.text = buildCounter.toString()
         logger.lifecycle("==> Local build #${buildCounter}  version: ${baseVersion}.${buildCounter}")
+    } else if (skipBuildCounter) {
+        logger.lifecycle("==> Local test environment detected; build counter bump skipped")
     }
 
     modVersion = "${baseVersion}.${buildCounter}"
 }
-version = "${modVersion}+mc${minecraft_version}"
+version = "${modVersion}+mc${minecraftVersion}"
 group   = project.maven_group
+
+def canonicalJarName = "${archives_base_name}-${modVersion}+mc${minecraftVersion}.jar".toString()
+def supportedVersionMatrix = [
+        [minecraft_version: '1.21.4',  yarn_mappings: '1.21.4+build.8',  loader_version: '0.16.10', fabric_api_version: '0.118.0+1.21.4', minecraft_dependency: '~1.21.4',  bundle_fabric_api_modules: 'true'],
+        [minecraft_version: '1.21.5',  yarn_mappings: '1.21.5+build.1',  loader_version: '0.16.14', fabric_api_version: '0.119.9+1.21.5', minecraft_dependency: '~1.21.5',  bundle_fabric_api_modules: 'true'],
+        [minecraft_version: '1.21.7',  yarn_mappings: '1.21.7+build.1',  loader_version: '0.16.14', fabric_api_version: '0.128.0+1.21.7', minecraft_dependency: '~1.21.7',  bundle_fabric_api_modules: 'true'],
+        [minecraft_version: '1.21.8',  yarn_mappings: '1.21.8+build.1',  loader_version: '0.16.14', fabric_api_version: '0.128.0+1.21.7', minecraft_dependency: '~1.21.8',  bundle_fabric_api_modules: 'true'],
+]
+def distDir = layout.projectDirectory.dir('dist')
+def verifySupportedArtifacts = {
+    supportedVersionMatrix.each { config ->
+        def versionDir = distDir.dir("mc/${config.minecraft_version}").asFile
+        def jarName = "${archives_base_name}-${modVersion}+mc${config.minecraft_version}.jar"
+        def artifact = new File(versionDir, jarName)
+        if (!artifact.isFile()) {
+            throw new GradleException("Missing built artifact for ${config.minecraft_version}: ${artifact}")
+        }
+    }
+}
 
 base {
     archivesName = project.archives_base_name
@@ -55,36 +101,44 @@ repositories {
 }
 
 dependencies {
-    minecraft         "com.mojang:minecraft:${project.minecraft_version}"
-    mappings          "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    minecraft         "com.mojang:minecraft:${minecraftVersion}"
+    mappings          "net.fabricmc:yarn:${yarnMappings}:v2"
+    modImplementation "net.fabricmc:fabric-loader:${loaderVersion}"
 
     // Compile against the full Fabric API so the IDE / compiler can resolve all symbols.
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabricApiVersion}"
 
     // Jar-in-Jar: bundle only the modules actually used by this mod.
     // Users only need Fabric Loader — no separate Fabric API download required.
-    def apiVer = project.fabric_api_version
-    [
-        "fabric-command-api-v2",          // /hud command registration
-        "fabric-lifecycle-events-v1",     // ClientTickEvents, ClientPlayConnectionEvents
-        "fabric-key-binding-api-v1",      // KeyBindingHelper (HUD editor keybind)
-        "fabric-message-api-v1",          // ClientSendMessageEvents
-        "fabric-networking-api-v1",       // ClientPlayConnectionEvents transitive dep
-        "fabric-rendering-v1",            // HudLayerRegistrationCallback, IdentifiedLayer
-        "fabric-entity-events-v1",        // ClientPlayerBlockBreakEvents
-        "fabric-events-interaction-v0",   // UseBlockCallback
-    ].each { modName ->
-        include fabricApi.module(modName, apiVer)
+    if (bundleFabricApiModules) {
+        def apiVer = fabricApiVersion
+        [
+            "fabric-command-api-v2",          // /hud command registration
+            "fabric-lifecycle-events-v1",     // ClientTickEvents, ClientPlayConnectionEvents
+            "fabric-key-binding-api-v1",      // KeyBindingHelper (HUD editor keybind)
+            "fabric-message-api-v1",          // ClientSendMessageEvents
+            "fabric-networking-api-v1",       // ClientPlayConnectionEvents transitive dep
+            "fabric-rendering-v1",            // HudLayerRegistrationCallback, IdentifiedLayer
+            "fabric-entity-events-v1",        // ClientPlayerBlockBreakEvents
+            "fabric-events-interaction-v0",   // UseBlockCallback
+        ].each { modName ->
+            include fabricApi.module(modName, apiVer)
+        }
+    } else {
+        logger.lifecycle("==> Skipping Fabric API module bundling for minecraft ${minecraftVersion}")
     }
 }
 
 processResources {
     // Expose only the short semantic version (no +mc suffix) to fabric.mod.json
     inputs.property 'version', modVersion
+    inputs.property 'minecraft_dependency', minecraftDependency
 
     filesMatching('fabric.mod.json') {
-        expand 'version': modVersion
+        expand(
+                'version': modVersion,
+                'minecraft_dependency': minecraftDependency,
+        )
     }
 }
 
@@ -104,22 +158,107 @@ java {
 // ---------------------------------------------------------------------------
 
 def releasesDir = file("releases")
+def remapJarTask = tasks.named('remapJar')
 
-task copyRelease(type: Copy, dependsOn: jar) {
-    description = 'Copies the built mod JAR into releases/ with a versioned filename.'
-    from(jar.archiveFile)
-    into(releasesDir)
-    // Rename to canonical form: crophud-1.0.42+mc1.21.4.jar
-    rename { "${archives_base_name}-${modVersion}+mc${minecraft_version}.jar" }
+tasks.register('verifyBuildOutputs') {
+    description = 'Verifies the remapped JAR name and embedded fabric.mod.json metadata.'
+    dependsOn(remapJarTask)
+
     doLast {
-        logger.lifecycle("==> Released: releases/${archives_base_name}-${modVersion}+mc${minecraft_version}.jar")
+        File builtJar = remapJarTask.get().archiveFile.get().asFile
+        if (!builtJar.name.equals(canonicalJarName)) {
+            throw new GradleException("Unexpected remapped jar name: ${builtJar.name} (expected ${canonicalJarName})")
+        }
+
+        def modJsonFile = zipTree(builtJar).matching { include 'fabric.mod.json' }.singleFile
+        def modJson = new JsonSlurper().parseText(modJsonFile.getText('UTF-8'))
+
+        if (modJson.version != modVersion) {
+            throw new GradleException("fabric.mod.json version mismatch: ${modJson.version} (expected ${modVersion})")
+        }
+
+        if (modJson.depends?.minecraft != minecraftDependency) {
+            throw new GradleException("fabric.mod.json minecraft dependency mismatch: ${modJson.depends?.minecraft} (expected ${minecraftDependency})")
+        }
     }
 }
 
-task release(dependsOn: [build, copyRelease]) {
+task copyRelease(type: Copy, dependsOn: remapJarTask) {
+    description = 'Copies the built mod JAR into releases/ with a versioned filename.'
+    from(remapJarTask.flatMap { it.archiveFile })
+    into(releasesDir)
+    // Rename to canonical form: crophud-1.0.42+mc1.21.4.jar
+    rename { canonicalJarName }
+    doLast {
+        logger.lifecycle("==> Released: releases/${canonicalJarName}")
+    }
+}
+
+task release(dependsOn: [build, tasks.named('verifyBuildOutputs'), copyRelease]) {
     description = 'Builds the mod and copies the JAR to the releases/ folder.'
     // Ensure copyRelease runs after build (jar is already produced by build)
     copyRelease.mustRunAfter build
+}
+
+tasks.register('verifyAllSupportedArtifacts') {
+    description = 'Verifies that dist/mc/<version>/ contains a built JAR for every supported Minecraft version.'
+
+    doLast {
+        verifySupportedArtifacts.call()
+    }
+}
+
+tasks.register('buildAllSupportedMcVersions') {
+    description = 'Builds all supported Minecraft versions locally and copies their JARs into dist/mc/<version>/.'
+
+    doLast {
+        delete(distDir.dir('mc'))
+
+        def wrapperScript = new File(rootDir, System.getProperty('os.name').toLowerCase().contains('windows') ? 'gradlew.bat' : 'gradlew')
+        if (!wrapperScript.isFile()) {
+            throw new GradleException("Gradle wrapper script not found: ${wrapperScript}")
+        }
+
+        supportedVersionMatrix.each { config ->
+            logger.lifecycle("==> Building Minecraft ${config.minecraft_version}")
+
+            def command = [
+                    wrapperScript.absolutePath,
+                    '--no-daemon',
+                    'clean',
+                    'verifyBuildOutputs',
+                    '-Pskip_build_counter=true',
+                    "-Pminecraft_version=${config.minecraft_version}",
+                    "-Pyarn_mappings=${config.yarn_mappings}",
+                    "-Ploader_version=${config.loader_version}",
+                    "-Pfabric_api_version=${config.fabric_api_version}",
+                    "-Pminecraft_dependency=${config.minecraft_dependency}",
+                    "-Pbundle_fabric_api_modules=${config.bundle_fabric_api_modules}",
+            ].collect { it.toString() }
+
+            def process = new ProcessBuilder(command)
+                    .directory(rootDir)
+                    .inheritIO()
+                    .start()
+
+            int exitCode = process.waitFor()
+            if (exitCode != 0) {
+                throw new GradleException("Failed to build Minecraft ${config.minecraft_version} (exit code ${exitCode})")
+            }
+
+            def builtJar = new File(rootDir, "build/libs/${archives_base_name}-${modVersion}+mc${config.minecraft_version}.jar")
+            if (!builtJar.isFile()) {
+                throw new GradleException("Expected built jar not found after ${config.minecraft_version} build: ${builtJar}")
+            }
+
+            copy {
+                from builtJar
+                into distDir.dir("mc/${config.minecraft_version}")
+            }
+        }
+
+        verifySupportedArtifacts.call()
+    }
 }
 
 publishing {
