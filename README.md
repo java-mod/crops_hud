@@ -1,6 +1,6 @@
 # Crop Harvest Session HUD
 
-> Minecraft 1.21.4 / Fabric  
+> Minecraft 1.21.4 ~ 1.21.5, 1.21.7 ~ 1.21.8 / Fabric  
 > 클라이언트 전용 모드
 
 작물 수확 중인 세션 정보를 HUD로 표시하는 Fabric 클라이언트 모드입니다.  
@@ -27,6 +27,22 @@
 - **서버 접속 시 업데이트 확인 알림**
   - 자동 업데이트 없음
   - 새 버전이 있으면 수동 업데이트 안내 메시지만 표시
+
+## 지원 버전
+
+이 프로젝트는 **하나의 코드베이스**를 유지하면서, 지원하는 Minecraft 버전별로 **개별 JAR**을 생성하는 방식으로 배포합니다.
+
+- `1.21.4`
+- `1.21.5`
+- `1.21.7`
+- `1.21.8`
+
+배포 파일 예시:
+
+- `crophud-1.0.4+mc1.21.4.jar`
+- `crophud-1.0.4+mc1.21.8.jar`
+
+각 게임 버전에 맞는 JAR만 선택해서 사용하면 됩니다.
 
 ## HUD 표시 항목
 
@@ -211,6 +227,57 @@
 - `config/crophud/crophud_prices.json`
   - 작물별 가격
   - 행운 레벨 정보
+
+## 개발 및 빌드
+
+### 로컬 기본 빌드
+
+기본값은 `gradle.properties`에 정의된 Minecraft 버전을 사용합니다.
+
+```bash
+./gradlew clean verifyBuildOutputs -Pskip_build_counter=true
+```
+
+`-Pskip_build_counter=true`를 주면 **로컬 테스트 환경에서 build_counter.txt가 증가하지 않습니다.**
+
+### 특정 Minecraft 버전으로 빌드
+
+버전별 빌드는 Gradle 프로퍼티를 주입해서 수행합니다.
+
+```bash
+./gradlew clean verifyBuildOutputs \
+  -Pskip_build_counter=true \
+  -Pminecraft_version=1.21.8 \
+  -Pyarn_mappings=1.21.8+build.1 \
+  -Ploader_version=0.16.14 \
+  -Pfabric_api_version=0.128.0+1.21.7 \
+  -Pminecraft_dependency="~1.21.8"
+```
+
+### 모든 지원 버전을 한 번에 빌드
+
+```bash
+./gradlew buildAllSupportedMcVersions
+```
+
+로컬 전체 빌드는 **순차적으로** 실행되며, 생성된 JAR는 아래 경로에 모입니다.
+
+- `dist/mc/1.21.4/`
+- `dist/mc/1.21.5/`
+- `dist/mc/1.21.7/`
+- `dist/mc/1.21.8/`
+
+빌드 후 산출물 확인만 따로 하고 싶다면 아래 명령을 사용할 수 있습니다.
+
+```bash
+./gradlew verifyAllSupportedArtifacts
+```
+
+### CI 릴리즈 방식
+
+- PR / 일반 검증: 지원 버전 matrix 기준으로 버전별 빌드만 수행
+- `main` 브랜치 반영 시: 버전별 JAR를 모두 생성하고 하나의 릴리즈에 함께 업로드
+- 릴리즈 버전은 동일하지만, 산출물은 Minecraft 버전별로 분리됩니다
 
 ## 업데이트 정책
 
