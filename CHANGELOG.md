@@ -3,10 +3,16 @@
 ## [v1.0.3] — 2026-04-03
 
 ### 📦 변경 사항
-- ♻️ refactor: 자동 업데이트 다운로드를 제거하고 업데이트 필요 알림만 표시하도록 변경
-- ⚖️ license: 프로젝트 라이선스를 GPL-3.0-only로 전환
+- ♻️ refactor: 자동 업데이트를 수동 알림 방식으로 전환
 
-- CHANGELOG.md v1.0.3 업데이트 [skip ci]
+- ⚖️ license: fabric 메타데이터를 GPL-3.0-only로 변경
+
+- ⚖️ license: GPL-3.0-only 라이선스 파일 추가
+
+- 📝 docs: v1.0.3 변경 이력 업데이트
+
+- 버전 v1.0.3 빌드 카운터 업데이트 [skip ci]
+
 
 ## [v1.0.2] — 2026-03-27
 
@@ -20,6 +26,9 @@
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 
 - 버전 v1.0.2 빌드 카운터 업데이트 [skip ci]
+
+- CHANGELOG.md v1.0.2 업데이트 [skip ci]
+
 
 ## [v1.0.1] — 2026-03-27
 
