@@ -3,10 +3,32 @@
 ## [v1.0.5] — 2026-04-03
 
 ### 📦 변경 사항
-- ♻️ refactor: HUD 렌더링과 입력 처리의 버전 호환 레이어를 정리
-- 🏗️ build: 지원 버전을 1.21.4, 1.21.5, 1.21.7, 1.21.8로 재구성
-- 👷 ci: 멀티버전 빌드/릴리즈 워크플로우를 지원 범위에 맞게 축소
-- 📝 docs: 지원 버전과 로컬 빌드 가이드를 최신화
+- ♻️ refactor: HUD 호환 렌더링과 입력 처리를 정리
+
+Ultraworked with [Sisyphus](https://github.com/code-yeongyu/oh-my-openagent)
+
+Co-authored-by: Sisyphus <clio-agent@sisyphuslabs.ai>
+
+- 🏗️ build: 지원 버전 빌드 구성을 1.21.8까지로 재정리
+
+Ultraworked with [Sisyphus](https://github.com/code-yeongyu/oh-my-openagent)
+
+Co-authored-by: Sisyphus <clio-agent@sisyphuslabs.ai>
+
+- 👷 ci: 멀티버전 워크플로우를 지원 범위에 맞게 축소
+
+Ultraworked with [Sisyphus](https://github.com/code-yeongyu/oh-my-openagent)
+
+Co-authored-by: Sisyphus <clio-agent@sisyphuslabs.ai>
+
+- 📝 docs: 지원 버전과 빌드 가이드를 최신화
+
+Ultraworked with [Sisyphus](https://github.com/code-yeongyu/oh-my-openagent)
+
+Co-authored-by: Sisyphus <clio-agent@sisyphuslabs.ai>
+
+- 버전 v1.0.5 빌드 카운터 업데이트 [skip ci]
+
 
 ## [v1.0.4] — 2026-04-03
 
@@ -18,6 +40,8 @@ Ultraworked with [Sisyphus](https://github.com/code-yeongyu/oh-my-openagent)
 Co-authored-by: Sisyphus <clio-agent@sisyphuslabs.ai>
 
 - 버전 v1.0.4 빌드 카운터 업데이트 [skip ci]
+
+- CHANGELOG.md v1.0.4 업데이트 [skip ci]
 
 
 ## [v1.0.3] — 2026-04-03
