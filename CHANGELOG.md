@@ -1,5 +1,20 @@
 # 변경 이력
 
+## [v1.0.6] — 2026-04-04
+
+### 📦 변경 사항
+- 🐛 fix: HUD 오버레이 등록 시 JDK 모듈 경계에서 발생하는 IllegalAccessException 수정
+
+- Event.register() 호출을 impl 서브클래스가 아닌 공개 Event 베이스 클래스에서 조회하도록 변경
+- setAccessible(true) 추가로 JDK 16+ 모듈 시스템 접근 제한 우회
+- registerOldestHudLayer()를 별도 메서드로 분리하여 폴백 체인 명확화
+- registerHudRendererCompat() 폴백 흐름에 누락된 return 추가
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+
+- 버전 v1.0.6 빌드 카운터 업데이트 [skip ci]
+
+
 ## [v1.0.5] — 2026-04-03
 
 ### 📦 변경 사항
@@ -28,6 +43,8 @@ Ultraworked with [Sisyphus](https://github.com/code-yeongyu/oh-my-openagent)
 Co-authored-by: Sisyphus <clio-agent@sisyphuslabs.ai>
 
 - 버전 v1.0.5 빌드 카운터 업데이트 [skip ci]
+
+- CHANGELOG.md v1.0.5 업데이트 [skip ci]
 
 
 ## [v1.0.4] — 2026-04-03
