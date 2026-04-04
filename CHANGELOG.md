@@ -1,5 +1,19 @@
 # 변경 이력
 
+## [v1.0.9] — 2026-04-04
+
+### 📦 변경 사항
+- 👷 ci: 1.21.10·1.21.11 matrix 추가 및 loader_dependency 파라미터 전달
+
+- build matrix에 1.21.10, 1.21.11 항목 추가
+- 모든 matrix 항목에 loader_dependency 필드 추가
+- Build 스텝에 -Ploader_dependency 파라미터 전달 추가
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+
+- 버전 v1.0.9 빌드 카운터 업데이트 [skip ci]
+
+
 ## [v1.0.8] — 2026-04-04
 
 ### 📦 변경 사항
@@ -43,6 +57,8 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 
 - 버전 v1.0.8 빌드 카운터 업데이트 [skip ci]
+
+- CHANGELOG.md v1.0.8 업데이트 [skip ci]
 
 
 ## [v1.0.6] — 2026-04-04
