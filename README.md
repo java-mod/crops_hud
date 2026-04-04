@@ -1,6 +1,6 @@
 # Crop Harvest Session HUD
 
-> Minecraft 1.21.4 ~ 1.21.5, 1.21.7 ~ 1.21.8 / Fabric  
+> Minecraft 1.21.4 ~ 1.21.5, 1.21.7 ~ 1.21.8, 1.21.10 ~ 1.21.11 / Fabric
 > 클라이언트 전용 모드
 
 작물 수확 중인 세션 정보를 HUD로 표시하는 Fabric 클라이언트 모드입니다.  
@@ -32,15 +32,20 @@
 
 이 프로젝트는 **하나의 코드베이스**를 유지하면서, 지원하는 Minecraft 버전별로 **개별 JAR**을 생성하는 방식으로 배포합니다.
 
-- `1.21.4`
-- `1.21.5`
-- `1.21.7`
-- `1.21.8`
+| Minecraft 버전 | Fabric Loader 요구 버전 |
+|----------------|------------------------|
+| `1.21.4`       | `>= 0.16.10`           |
+| `1.21.5`       | `>= 0.16.10`           |
+| `1.21.7`       | `>= 0.16.10`           |
+| `1.21.8`       | `>= 0.16.10`           |
+| `1.21.10`      | `>= 0.17.2`            |
+| `1.21.11`      | `>= 0.18.1`            |
 
 배포 파일 예시:
 
-- `crophud-1.0.4+mc1.21.4.jar`
-- `crophud-1.0.4+mc1.21.8.jar`
+- `crophud-1.0.8+mc1.21.4.jar`
+- `crophud-1.0.8+mc1.21.10.jar`
+- `crophud-1.0.8+mc1.21.11.jar`
 
 각 게임 버전에 맞는 JAR만 선택해서 사용하면 됩니다.
 
@@ -245,13 +250,35 @@
 버전별 빌드는 Gradle 프로퍼티를 주입해서 수행합니다.
 
 ```bash
+# 1.21.8 예시
 ./gradlew clean verifyBuildOutputs \
   -Pskip_build_counter=true \
   -Pminecraft_version=1.21.8 \
   -Pyarn_mappings=1.21.8+build.1 \
   -Ploader_version=0.16.14 \
   -Pfabric_api_version=0.128.0+1.21.7 \
-  -Pminecraft_dependency="~1.21.8"
+  -Pminecraft_dependency="~1.21.8" \
+  -Ploader_dependency=">=0.16.10"
+
+# 1.21.10 예시
+./gradlew clean verifyBuildOutputs \
+  -Pskip_build_counter=true \
+  -Pminecraft_version=1.21.10 \
+  -Pyarn_mappings=1.21.10+build.2 \
+  -Ploader_version=0.17.2 \
+  -Pfabric_api_version=0.138.4+1.21.10 \
+  -Pminecraft_dependency="~1.21.10" \
+  -Ploader_dependency=">=0.17.2"
+
+# 1.21.11 예시
+./gradlew clean verifyBuildOutputs \
+  -Pskip_build_counter=true \
+  -Pminecraft_version=1.21.11 \
+  -Pyarn_mappings=1.21.11+build.4 \
+  -Ploader_version=0.18.1 \
+  -Pfabric_api_version=0.141.1+1.21.11 \
+  -Pminecraft_dependency="~1.21.11" \
+  -Ploader_dependency=">=0.18.1"
 ```
 
 ### 모든 지원 버전을 한 번에 빌드
@@ -260,12 +287,14 @@
 ./gradlew buildAllSupportedMcVersions
 ```
 
-로컬 전체 빌드는 **순차적으로** 실행되며, 생성된 JAR는 아래 경로에 모입니다.
+로컬 전체 빌드는 **순차적으로** 실행되며, 생성된 JAR는 아래 경로에 버전별로 모입니다.
 
 - `dist/mc/1.21.4/`
 - `dist/mc/1.21.5/`
 - `dist/mc/1.21.7/`
 - `dist/mc/1.21.8/`
+- `dist/mc/1.21.10/`
+- `dist/mc/1.21.11/`
 
 빌드 후 산출물 확인만 따로 하고 싶다면 아래 명령을 사용할 수 있습니다.
 
