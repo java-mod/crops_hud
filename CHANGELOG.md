@@ -2,20 +2,48 @@
 
 ## [v1.0.8] — 2026-04-04
 
-### 🐛 버그 수정
-- HUD 등록 호환 로직의 예외 처리 범위를 `ReflectiveOperationException` → `Exception`으로 확장하여 런타임 예외 누락 방지
-- `findMethod()` 반환 실패 시 `IllegalStateException` 대신 `NoSuchMethodException`을 던지도록 수정 (catch 블록에서 올바르게 잡힘)
-- MC 1.21.10에서 `KeyBinding.Category` 탐색 시 `create(Identifier)` 또는 생성자 중 하나만 있어도 인식하도록 수정 (String 기반 카테고리 생성자 제거 대응)
+### 📦 변경 사항
+- 🐛 fix: HUD 예외 처리 범위 확장 및 1.21.10 KeyBinding.Category 탐색 로직 수정
 
-### 🏗️ 빌드
-- MC 1.21.10 (`fabric-api 0.138.4+1.21.10`, Yarn `1.21.10+build.2`) 지원 추가
-- MC 1.21.11 (`fabric-api 0.141.1+1.21.11`, Yarn `1.21.11+build.4`) 지원 추가
-- `fabric.mod.json`의 Fabric Loader 의존 버전을 빌드 시 동적으로 주입하도록 변경
-  - 1.21.4 ~ 1.21.8: `>= 0.16.10`
-  - 1.21.10: `>= 0.17.2`
-  - 1.21.11: `>= 0.18.1`
+- registerHudRendererCompat() catch 블록을 ReflectiveOperationException → Exception으로 확장
+- findMethod()가 NoSuchMethodException을 던지도록 수정하여 catch 블록에서 올바르게 처리
+- findKeyBindingCategoryClass()를 create(Identifier) 또는 constructor(Identifier) 중
+  하나만 있어도 Category 클래스를 찾도록 변경 (MC 1.21.10에서 String 생성자 제거 대응)
 
----
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+
+- 🏗️ build: 1.21.10·1.21.11 지원 추가 및 로더 의존성 버전 동적 주입
+
+- supportedVersionMatrix에 1.21.10, 1.21.11 항목 추가
+  - 1.21.10: yarn 1.21.10+build.2 / fabric-api 0.138.4 / loader 0.17.2
+  - 1.21.11: yarn 1.21.11+build.4 / fabric-api 0.141.1 / loader 0.18.1
+- loader_dependency 프로퍼티를 추가하여 버전별 최소 로더 요구사항을
+  fabric.mod.json에 빌드 시 동적으로 주입
+- buildAllSupportedMcVersions 태스크에 loader_dependency 파라미터 전달
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+
+- 🔧 chore: fabric.mod.json Fabric Loader 의존 버전을 빌드 시 주입 방식으로 변경
+
+hardcode된 >=0.16.10 대신 ${loader_dependency} 플레이스홀더를 사용하여
+버전별 JAR마다 올바른 최소 로더 요구사항이 기록되도록 수정
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+
+- 📝 docs: 지원 버전 1.21.10·1.21.11 및 Fabric Loader 요구사항 반영
+
+- 지원 버전 목록을 표 형식으로 변경하고 버전별 최소 Loader 요구사항 명시
+- 특정 버전 빌드 예시에 1.21.10, 1.21.11 추가 및 loader_dependency 파라미터 포함
+- dist 출력 경로에 1.21.10, 1.21.11 디렉터리 추가
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+
+- 📝 docs: CHANGELOG v1.0.8 추가
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+
+- 버전 v1.0.8 빌드 카운터 업데이트 [skip ci]
+
 
 ## [v1.0.6] — 2026-04-04
 
@@ -23,7 +51,7 @@
 - 🐛 fix: HUD 오버레이 등록 시 JDK 모듈 경계에서 발생하는 IllegalAccessException 수정
 
 - Event.register() 호출을 impl 서브클래스가 아닌 공개 Event 베이스 클래스에서 조회하도록 변경
-- setAccessible(true) 추가로 JDK 16+ 모듈 시스템 접근 우회
+- setAccessible(true) 추가로 JDK 16+ 모듈 시스템 접근 제한 우회
 - registerOldestHudLayer()를 별도 메서드로 분리하여 폴백 체인 명확화
 - registerHudRendererCompat() 폴백 흐름에 누락된 return 추가
 
@@ -31,7 +59,8 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 
 - 버전 v1.0.6 빌드 카운터 업데이트 [skip ci]
 
----
+- CHANGELOG.md v1.0.6 업데이트 [skip ci]
+
 
 ## [v1.0.5] — 2026-04-03
 
@@ -137,5 +166,6 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 - 버전 v1.0.0 빌드 카운터 업데이트 [skip ci]
 
 - CHANGELOG.md v1.0.0 업데이트 [skip ci]
+
 
 
