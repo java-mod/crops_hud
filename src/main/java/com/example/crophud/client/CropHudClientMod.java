@@ -82,25 +82,25 @@ public class CropHudClientMod implements ClientModInitializer {
         try {
             registerLegacyHudLayer();
             return;
-        } catch (ReflectiveOperationException ignored) {
+        } catch (Exception ignored) {
             CropHudMod.LOGGER.info("Legacy HUD registration API not available; trying modern API");
         }
 
         try {
             registerModernHudLayer();
             return;
-        } catch (ReflectiveOperationException ignored) {
+        } catch (Exception ignored) {
             CropHudMod.LOGGER.info("Modern HUD registration API not available; trying oldest API");
         }
 
         try {
             registerOldestHudLayer();
-        } catch (ReflectiveOperationException e) {
+        } catch (Exception e) {
             throw new IllegalStateException("Failed to register Crops HUD overlay for this Fabric API version", e);
         }
     }
 
-    private static void registerOldestHudLayer() throws ReflectiveOperationException {
+    private static void registerOldestHudLayer() throws Exception {
         Class<?> callbackClass = Class.forName("net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback");
         Object event = callbackClass.getField("EVENT").get(null);
 
@@ -154,18 +154,16 @@ public class CropHudClientMod implements ClientModInitializer {
 
     private static Class<?> findKeyBindingCategoryClass() throws ClassNotFoundException {
         for (Class<?> nestedClass : KeyBinding.class.getDeclaredClasses()) {
-            try {
-                nestedClass.getMethod("create", Identifier.class);
-                nestedClass.getConstructor(Identifier.class);
-                return nestedClass;
-            } catch (ReflectiveOperationException ignored) {
-                // Continue searching for the runtime-remapped Category type.
-            }
+            boolean hasCreate      = false;
+            boolean hasConstructor = false;
+            try { nestedClass.getMethod("create", Identifier.class);   hasCreate      = true; } catch (Exception ignored) {}
+            try { nestedClass.getConstructor(Identifier.class);        hasConstructor = true; } catch (Exception ignored) {}
+            if (hasCreate || hasConstructor) return nestedClass;
         }
         throw new ClassNotFoundException("KeyBinding.Category");
     }
 
-    private static void registerLegacyHudLayer() throws ReflectiveOperationException {
+    private static void registerLegacyHudLayer() throws Exception {
         Class<?> callbackClass = Class.forName("net.fabricmc.fabric.api.client.rendering.v1.HudLayerRegistrationCallback");
         Class<?> identifiedLayerClass = Class.forName("net.fabricmc.fabric.api.client.rendering.v1.IdentifiedLayer");
         Object event = callbackClass.getField("EVENT").get(null);
@@ -196,7 +194,7 @@ public class CropHudClientMod implements ClientModInitializer {
         registerMethod.invoke(event, callback);
     }
 
-    private static void registerModernHudLayer() throws ReflectiveOperationException {
+    private static void registerModernHudLayer() throws Exception {
         Class<?> registryClass = Class.forName("net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry");
         Class<?> vanillaHudElementsClass = Class.forName("net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements");
         Method attachMethod = findMethod(registryClass, "attachElementBefore", 3);
@@ -223,13 +221,13 @@ public class CropHudClientMod implements ClientModInitializer {
         );
     }
 
-    private static Method findMethod(Class<?> type, String name, int parameterCount) {
+    private static Method findMethod(Class<?> type, String name, int parameterCount) throws NoSuchMethodException {
         for (Method method : type.getMethods()) {
             if (method.getName().equals(name) && method.getParameterCount() == parameterCount) {
                 return method;
             }
         }
-        throw new IllegalStateException("Unable to find method " + name + " on " + type.getName());
+        throw new NoSuchMethodException("Unable to find method " + name + " on " + type.getName());
     }
 
     private static boolean isObjectMethod(Method method) {
