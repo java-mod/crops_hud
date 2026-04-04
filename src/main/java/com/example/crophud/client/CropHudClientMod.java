@@ -88,9 +88,39 @@ public class CropHudClientMod implements ClientModInitializer {
 
         try {
             registerModernHudLayer();
+            return;
+        } catch (ReflectiveOperationException ignored) {
+            CropHudMod.LOGGER.info("Modern HUD registration API not available; trying oldest API");
+        }
+
+        try {
+            registerOldestHudLayer();
         } catch (ReflectiveOperationException e) {
             throw new IllegalStateException("Failed to register Crops HUD overlay for this Fabric API version", e);
         }
+    }
+
+    private static void registerOldestHudLayer() throws ReflectiveOperationException {
+        Class<?> callbackClass = Class.forName("net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback");
+        Object event = callbackClass.getField("EVENT").get(null);
+
+        // Resolve register() on the public Event API class, not the impl subclass,
+        // so Java module access checks do not block the reflective invoke.
+        Class<?> eventBaseClass = Class.forName("net.fabricmc.fabric.api.event.Event");
+        Method registerMethod = eventBaseClass.getMethod("register", Object.class);
+        registerMethod.setAccessible(true);
+
+        Object callback = Proxy.newProxyInstance(
+                callbackClass.getClassLoader(),
+                new Class[]{callbackClass},
+                (proxy, method, args) -> {
+                    if (isObjectMethod(method)) return handleObjectMethod(proxy, method, args);
+                    renderHud((DrawContext) args[0]);
+                    return null;
+                }
+        );
+
+        registerMethod.invoke(event, callback);
     }
 
     private static KeyBinding createOpenEditorKeyBinding() {
@@ -139,7 +169,11 @@ public class CropHudClientMod implements ClientModInitializer {
         Class<?> callbackClass = Class.forName("net.fabricmc.fabric.api.client.rendering.v1.HudLayerRegistrationCallback");
         Class<?> identifiedLayerClass = Class.forName("net.fabricmc.fabric.api.client.rendering.v1.IdentifiedLayer");
         Object event = callbackClass.getField("EVENT").get(null);
-        Method registerMethod = event.getClass().getMethod("register", callbackClass);
+        // Resolve register() on the public Event API class, not the impl subclass,
+        // so Java module access checks do not block the reflective invoke.
+        Class<?> eventBaseClass = Class.forName("net.fabricmc.fabric.api.event.Event");
+        Method registerMethod = eventBaseClass.getMethod("register", Object.class);
+        registerMethod.setAccessible(true);
 
         Object callback = Proxy.newProxyInstance(
                 callbackClass.getClassLoader(),
