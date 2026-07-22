@@ -1,22 +1,103 @@
 # 변경 이력
 
-## [v1.0.9] — 2026-04-04
+## [v1.0.0] — 2026-07-22
 
 ### 📦 변경 사항
-- 👷 ci: 1.21.10·1.21.11 matrix 추가 및 loader_dependency 파라미터 전달
-
-- build matrix에 1.21.10, 1.21.11 항목 추가
-- 모든 matrix 항목에 loader_dependency 필드 추가
-- Build 스텝에 -Ploader_dependency 파라미터 전달 추가
+- ✨ feat: 초기 릴리즈
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 
-- 버전 v1.0.9 빌드 카운터 업데이트 [skip ci]
+- 버전 v1.0.0 빌드 카운터 업데이트 [skip ci]
 
+- CHANGELOG.md v1.0.0 업데이트 [skip ci]
 
-## [v1.0.8] — 2026-04-04
+- 📝 docs: 명령어 사용 가이드 업데이트
 
-### 📦 변경 사항
+대기시간, 작물고정, 배경 설정 명령어 추가.
+자동 일시정지 설명을 고정 5초에서 설정 가능으로 수정.
+한/영 명령어 병기 및 예시 보강.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+
+- 버전 v1.0.1 빌드 카운터 업데이트 [skip ci]
+
+- CHANGELOG.md v1.0.1 업데이트 [skip ci]
+
+- ✨ feat: HUD 시간당 수익 제거 및 예상 수익 소숫점 미표시 처리
+
+- 시간당 수익 행 제거 (CARD_HEIGHT 86→76)
+- 예상 수익 표시를 소숫점 절사(RoundingMode.DOWN) 정수로 변경
+- formatInteger() 헬퍼 메서드 추가
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+
+- 버전 v1.0.2 빌드 카운터 업데이트 [skip ci]
+
+- CHANGELOG.md v1.0.2 업데이트 [skip ci]
+
+- ♻️ refactor: 자동 업데이트를 수동 알림 방식으로 전환
+
+- ⚖️ license: fabric 메타데이터를 GPL-3.0-only로 변경
+
+- ⚖️ license: GPL-3.0-only 라이선스 파일 추가
+
+- 📝 docs: v1.0.3 변경 이력 업데이트
+
+- 버전 v1.0.3 빌드 카운터 업데이트 [skip ci]
+
+- CHANGELOG.md v1.0.3 업데이트 [skip ci]
+
+- 📝 docs: README 문서로 전환하고 사용 가이드 재작성
+
+Ultraworked with [Sisyphus](https://github.com/code-yeongyu/oh-my-openagent)
+
+Co-authored-by: Sisyphus <clio-agent@sisyphuslabs.ai>
+
+- 버전 v1.0.4 빌드 카운터 업데이트 [skip ci]
+
+- CHANGELOG.md v1.0.4 업데이트 [skip ci]
+
+- ♻️ refactor: HUD 호환 렌더링과 입력 처리를 정리
+
+Ultraworked with [Sisyphus](https://github.com/code-yeongyu/oh-my-openagent)
+
+Co-authored-by: Sisyphus <clio-agent@sisyphuslabs.ai>
+
+- 🏗️ build: 지원 버전 빌드 구성을 1.21.8까지로 재정리
+
+Ultraworked with [Sisyphus](https://github.com/code-yeongyu/oh-my-openagent)
+
+Co-authored-by: Sisyphus <clio-agent@sisyphuslabs.ai>
+
+- 👷 ci: 멀티버전 워크플로우를 지원 범위에 맞게 축소
+
+Ultraworked with [Sisyphus](https://github.com/code-yeongyu/oh-my-openagent)
+
+Co-authored-by: Sisyphus <clio-agent@sisyphuslabs.ai>
+
+- 📝 docs: 지원 버전과 빌드 가이드를 최신화
+
+Ultraworked with [Sisyphus](https://github.com/code-yeongyu/oh-my-openagent)
+
+Co-authored-by: Sisyphus <clio-agent@sisyphuslabs.ai>
+
+- 버전 v1.0.5 빌드 카운터 업데이트 [skip ci]
+
+- CHANGELOG.md v1.0.5 업데이트 [skip ci]
+
+- 🐛 fix: HUD 오버레이 등록 시 JDK 모듈 경계에서 발생하는 IllegalAccessException 수정
+
+- Event.register() 호출을 impl 서브클래스가 아닌 공개 Event 베이스 클래스에서 조회하도록 변경
+- setAccessible(true) 추가로 JDK 16+ 모듈 시스템 접근 제한 우회
+- registerOldestHudLayer()를 별도 메서드로 분리하여 폴백 체인 명확화
+- registerHudRendererCompat() 폴백 흐름에 누락된 return 추가
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+
+- 버전 v1.0.6 빌드 카운터 업데이트 [skip ci]
+
+- CHANGELOG.md v1.0.6 업데이트 [skip ci]
+
 - 🐛 fix: HUD 예외 처리 범위 확장 및 1.21.10 KeyBinding.Category 탐색 로직 수정
 
 - registerHudRendererCompat() catch 블록을 ReflectiveOperationException → Exception으로 확장
@@ -60,128 +141,42 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 
 - CHANGELOG.md v1.0.8 업데이트 [skip ci]
 
+- 👷 ci: 1.21.10·1.21.11 matrix 추가 및 loader_dependency 파라미터 전달
 
-## [v1.0.6] — 2026-04-04
-
-### 📦 변경 사항
-- 🐛 fix: HUD 오버레이 등록 시 JDK 모듈 경계에서 발생하는 IllegalAccessException 수정
-
-- Event.register() 호출을 impl 서브클래스가 아닌 공개 Event 베이스 클래스에서 조회하도록 변경
-- setAccessible(true) 추가로 JDK 16+ 모듈 시스템 접근 제한 우회
-- registerOldestHudLayer()를 별도 메서드로 분리하여 폴백 체인 명확화
-- registerHudRendererCompat() 폴백 흐름에 누락된 return 추가
+- build matrix에 1.21.10, 1.21.11 항목 추가
+- 모든 matrix 항목에 loader_dependency 필드 추가
+- Build 스텝에 -Ploader_dependency 파라미터 전달 추가
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 
-- 버전 v1.0.6 빌드 카운터 업데이트 [skip ci]
+- 버전 v1.0.9 빌드 카운터 업데이트 [skip ci]
 
-- CHANGELOG.md v1.0.6 업데이트 [skip ci]
+- CHANGELOG.md v1.0.9 업데이트 [skip ci]
 
+- ✨ feat: HUD 배경 색상/투명도/커스텀 이미지 커스터마이징 기능 추가
 
-## [v1.0.5] — 2026-04-03
+- /hud edit 화면에 배경 색상(프리셋+헥스 입력)·투명도 슬라이더·커스텀 이미지
+  토글·이미지 선택(드래그앤드롭 및 네이티브 파일 대화상자) 패널을 통합
+- 선택한 이미지는 카드 비율에 맞춰 고품질 리샘플링(단계적 다운스케일+bicubic)
+  후 config/crophud/background.png로 저장
+- DrawContext#drawTexture, NativeImageBackedTexture 생성자 등 1.21.4~1.21.11
+  사이에 시그니처가 바뀌는 API를 리플렉션으로 흡수
+- net.minecraft.* 클래스/메서드 리플렉션은 FabricLoader의 MappingResolver로
+  intermediary 이름을 런타임 이름으로 변환하도록 수정 (프로덕션 환경에서
+  Class.forName 문자열이 리매핑되지 않아 항상 실패하던 문제의 근본 원인 수정)
+- 6개 지원 버전(1.21.4~1.21.11) 전체 compileJava 통과 확인
 
-### 📦 변경 사항
-- ♻️ refactor: HUD 호환 렌더링과 입력 처리를 정리
+👷 ci: 릴리즈 발행 시 VirusTotal 자동 검사 워크플로우 추가
 
-Ultraworked with [Sisyphus](https://github.com/code-yeongyu/oh-my-openagent)
+- release event(published) 트리거로 첨부된 jar를 스캔하고 결과 링크를
+  릴리즈 노트에 자동 첨부 (crazy-max/ghaction-virustotal)
+- VT_API_KEY 시크릿 등록 필요
 
-Co-authored-by: Sisyphus <clio-agent@sisyphuslabs.ai>
+🔧 chore: 로컬 빌드 카운터를 0으로 리셋
 
-- 🏗️ build: 지원 버전 빌드 구성을 1.21.8까지로 재정리
-
-Ultraworked with [Sisyphus](https://github.com/code-yeongyu/oh-my-openagent)
-
-Co-authored-by: Sisyphus <clio-agent@sisyphuslabs.ai>
-
-- 👷 ci: 멀티버전 워크플로우를 지원 범위에 맞게 축소
-
-Ultraworked with [Sisyphus](https://github.com/code-yeongyu/oh-my-openagent)
-
-Co-authored-by: Sisyphus <clio-agent@sisyphuslabs.ai>
-
-- 📝 docs: 지원 버전과 빌드 가이드를 최신화
-
-Ultraworked with [Sisyphus](https://github.com/code-yeongyu/oh-my-openagent)
-
-Co-authored-by: Sisyphus <clio-agent@sisyphuslabs.ai>
-
-- 버전 v1.0.5 빌드 카운터 업데이트 [skip ci]
-
-- CHANGELOG.md v1.0.5 업데이트 [skip ci]
-
-
-## [v1.0.4] — 2026-04-03
-
-### 📦 변경 사항
-- 📝 docs: README 문서로 전환하고 사용 가이드 재작성
-
-Ultraworked with [Sisyphus](https://github.com/code-yeongyu/oh-my-openagent)
-
-Co-authored-by: Sisyphus <clio-agent@sisyphuslabs.ai>
-
-- 버전 v1.0.4 빌드 카운터 업데이트 [skip ci]
-
-- CHANGELOG.md v1.0.4 업데이트 [skip ci]
-
-
-## [v1.0.3] — 2026-04-03
-
-### 📦 변경 사항
-- ♻️ refactor: 자동 업데이트를 수동 알림 방식으로 전환
-
-- ⚖️ license: fabric 메타데이터를 GPL-3.0-only로 변경
-
-- ⚖️ license: GPL-3.0-only 라이선스 파일 추가
-
-- 📝 docs: v1.0.3 변경 이력 업데이트
-
-- 버전 v1.0.3 빌드 카운터 업데이트 [skip ci]
-
-- CHANGELOG.md v1.0.3 업데이트 [skip ci]
-
-
-## [v1.0.2] — 2026-03-27
-
-### 📦 변경 사항
-- ✨ feat: HUD 시간당 수익 제거 및 예상 수익 소숫점 미표시 처리
-
-- 시간당 수익 행 제거 (CARD_HEIGHT 86→76)
-- 예상 수익 표시를 소숫점 절사(RoundingMode.DOWN) 정수로 변경
-- formatInteger() 헬퍼 메서드 추가
-
-Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
-
-- 버전 v1.0.2 빌드 카운터 업데이트 [skip ci]
-
-- CHANGELOG.md v1.0.2 업데이트 [skip ci]
-
-
-## [v1.0.1] — 2026-03-27
-
-### 📦 변경 사항
-- 📝 docs: 명령어 사용 가이드 업데이트
-
-대기시간, 작물고정, 배경 설정 명령어 추가.
-자동 일시정지 설명을 고정 5초에서 설정 가능으로 수정.
-한/영 명령어 병기 및 예시 보강.
-
-Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
-
-- 버전 v1.0.1 빌드 카운터 업데이트 [skip ci]
-
-- CHANGELOG.md v1.0.1 업데이트 [skip ci]
-
-
-## [v1.0.0] — 2026-03-27
-
-### 📦 변경 사항
-- ✨ feat: 초기 릴리즈
-
-Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
 
 - 버전 v1.0.0 빌드 카운터 업데이트 [skip ci]
-
-- CHANGELOG.md v1.0.0 업데이트 [skip ci]
 
 
 
