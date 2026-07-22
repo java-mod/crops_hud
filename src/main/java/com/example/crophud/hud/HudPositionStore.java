@@ -25,6 +25,12 @@ public class HudPositionStore {
     private boolean showBackground = true;
     /** Seconds of inactivity before the session timer pauses. Default: 5. Range: 1–300. */
     private int idlePauseSeconds = 5;
+    /** Base RGB (0xRRGGBB) used for the card background fill. Default matches the original hardcoded panel color. */
+    private int backgroundColor = 0x262033;
+    /** Background fill opacity as a percentage (0–100). Default: 71 (~0xB5 alpha), matching the original panel. */
+    private int backgroundOpacity = 71;
+    /** When true, a user-supplied image (config/crophud/background.png) is drawn instead of the color fill. */
+    private boolean useImageBackground = false;
 
     public HudPositionStore() {
         this.filePath = FabricLoader.getInstance().getConfigDir().resolve(CropHudMod.MOD_ID).resolve(FILE_NAME);
@@ -66,6 +72,15 @@ public class HudPositionStore {
             if (root.has("idlePauseSeconds") && root.get("idlePauseSeconds").isJsonPrimitive()) {
                 idlePauseSeconds = Math.max(1, Math.min(300, root.get("idlePauseSeconds").getAsInt()));
             }
+            if (root.has("backgroundColor") && root.get("backgroundColor").isJsonPrimitive()) {
+                backgroundColor = root.get("backgroundColor").getAsInt() & 0xFFFFFF;
+            }
+            if (root.has("backgroundOpacity") && root.get("backgroundOpacity").isJsonPrimitive()) {
+                backgroundOpacity = Math.max(0, Math.min(100, root.get("backgroundOpacity").getAsInt()));
+            }
+            if (root.has("useImageBackground") && root.get("useImageBackground").isJsonPrimitive()) {
+                useImageBackground = root.get("useImageBackground").getAsBoolean();
+            }
         } catch (Exception e) {
             CropHudMod.LOGGER.error("Failed to load HUD positions from {}", filePath, e);
         }
@@ -81,6 +96,9 @@ public class HudPositionStore {
             root.addProperty("customY", customY);
             root.addProperty("showBackground", showBackground);
             root.addProperty("idlePauseSeconds", idlePauseSeconds);
+            root.addProperty("backgroundColor", backgroundColor);
+            root.addProperty("backgroundOpacity", backgroundOpacity);
+            root.addProperty("useImageBackground", useImageBackground);
             Files.writeString(filePath, GSON.toJson(root));
         } catch (IOException e) {
             CropHudMod.LOGGER.error("Failed to save HUD positions to {}", filePath, e);
@@ -159,6 +177,43 @@ public class HudPositionStore {
     /** Sets the idle pause delay in seconds (clamped to 1–300) and persists. */
     public void setIdlePauseSeconds(int seconds) {
         this.idlePauseSeconds = Math.max(1, Math.min(300, seconds));
+        save();
+    }
+
+    // -------------------------------------------------------------------------
+    // Background appearance (color, opacity, custom image)
+    // -------------------------------------------------------------------------
+
+    /** Returns the card background base color as 0xRRGGBB. */
+    public int getBackgroundColor() {
+        return backgroundColor;
+    }
+
+    /** Sets the card background base color (any alpha bits in {@code rgb} are ignored) and persists. */
+    public void setBackgroundColor(int rgb) {
+        this.backgroundColor = rgb & 0xFFFFFF;
+        save();
+    }
+
+    /** Returns the card background opacity as a percentage (0–100). */
+    public int getBackgroundOpacity() {
+        return backgroundOpacity;
+    }
+
+    /** Sets the card background opacity in percent (clamped to 0–100) and persists. */
+    public void setBackgroundOpacity(int percent) {
+        this.backgroundOpacity = Math.max(0, Math.min(100, percent));
+        save();
+    }
+
+    /** Returns {@code true} when a user-supplied image should be used instead of the color fill. */
+    public boolean isUseImageBackground() {
+        return useImageBackground;
+    }
+
+    /** Toggles custom image background mode and persists. */
+    public void setUseImageBackground(boolean use) {
+        this.useImageBackground = use;
         save();
     }
 }

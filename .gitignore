@@ -45,3 +45,4 @@ dist/
 # -----------------------------------------------------------------------
 # build_counter.txt  ← commit so the patch number persists across machines
 # gradle.properties  ← commit: contains mod_version_base
+.opencode

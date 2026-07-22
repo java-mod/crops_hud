@@ -344,12 +344,22 @@ public class CropHudClientMod implements ClientModInitializer {
         int statusW = client.textRenderer.getWidth(statusText) + 10;
 
         // --- Draw card background (skipped when user has disabled it) ---
-        if (CropHudMod.hudPositionStore().isShowBackground()) {
-            ctx.fill(x,     y,     x + cardWidth, y + cardHeight, 0xB5262033);
-            ctx.fill(x + 2, y + 2, x + cardWidth - 2, y + cardHeight - 2, 0xCC2F2940);
-            ctx.fill(x,     y,     x + cardWidth, y + 3,          0xEFA9D7D0);
-            ctx.fill(x + CARD_PADDING_X, y + 19,
-                     x + cardWidth - CARD_PADDING_X, y + 20, 0x55FFEAF6);
+        HudPositionStore store = CropHudMod.hudPositionStore();
+        if (store.isShowBackground()) {
+            if (store.isUseImageBackground() && HudBackgroundTexture.isAvailable()) {
+                HudBackgroundTexture.draw(ctx, x, y, cardWidth, cardHeight);
+            } else {
+                int rgb        = store.getBackgroundColor() & 0xFFFFFF;
+                int alpha      = Math.round(store.getBackgroundOpacity() / 100f * 255);
+                int innerAlpha = Math.min(255, alpha + 23);
+                int outerColor = (alpha << 24) | rgb;
+                int innerColor = (innerAlpha << 24) | brighten(rgb, 10);
+                ctx.fill(x,     y,     x + cardWidth, y + cardHeight, outerColor);
+                ctx.fill(x + 2, y + 2, x + cardWidth - 2, y + cardHeight - 2, innerColor);
+                ctx.fill(x,     y,     x + cardWidth, y + 3,          0xEFA9D7D0);
+                ctx.fill(x + CARD_PADDING_X, y + 19,
+                         x + cardWidth - CARD_PADDING_X, y + 20, 0x55FFEAF6);
+            }
         }
 
         // --- Status badge ---
@@ -474,6 +484,14 @@ public class CropHudClientMod implements ClientModInitializer {
         fmt.setMaximumFractionDigits(0);
         fmt.setRoundingMode(java.math.RoundingMode.DOWN);
         return fmt.format(value);
+    }
+
+    /** Adds {@code amount} to each RGB channel of {@code rgb} (0xRRGGBB), clamped to 255. */
+    private static int brighten(int rgb, int amount) {
+        int r = Math.min(255, ((rgb >> 16) & 0xFF) + amount);
+        int g = Math.min(255, ((rgb >> 8)  & 0xFF) + amount);
+        int b = Math.min(255, (rgb         & 0xFF) + amount);
+        return (r << 16) | (g << 8) | b;
     }
 
     static int clamp(int v, int min, int max) {

@@ -22,8 +22,12 @@ import net.minecraft.text.Text;
  * <pre>
  *   /hud reset                  — reset the current harvest session
  *   /hud position <anchor>      — set HUD position to a preset anchor
- *   /hud edit                   — open the drag-and-drop HUD editor
+ *   /hud edit                   — open the drag-and-drop HUD editor, which also has a
+ *                                  live panel for background color/opacity/image
  *   /hud background on|off      — toggle the card background
+ *   /hud background color <hex> — set the background color (RRGGBB)
+ *   /hud background opacity <n> — set the background opacity (0–100)
+ *   /hud background image on|off — use config/crophud/background.png instead of a color fill
  *   /hud pause <seconds>        — set idle pause delay (1–300 s)
  *   /hud lockcrop <crop>        — lock tracking to a specific crop
  *   /hud lockcrop off           — remove crop lock
@@ -204,6 +208,104 @@ public final class HudCommand {
                                     "crophud.command.hud.background_set",
                                     Text.translatable("crophud.command.hud.background_off")));
                             return 1;
+                        }))
+                .then(buildBackgroundColor("color"))
+                .then(buildBackgroundColor("색상"))
+                .then(buildBackgroundOpacity("opacity"))
+                .then(buildBackgroundOpacity("투명도"))
+                .then(buildBackgroundImage("image", "on", "off"))
+                .then(buildBackgroundImage("이미지", "켜기", "끄기"));
+    }
+
+    // /hud background color <hex>  — sets the background base color (RRGGBB, '#' optional)
+    private static LiteralArgumentBuilder<FabricClientCommandSource> buildBackgroundColor(String lit) {
+        return ClientCommandManager.literal(lit)
+                .executes(ctx -> {
+                    int current = CropHudMod.hudPositionStore().getBackgroundColor();
+                    ctx.getSource().sendFeedback(Text.translatable(
+                            "crophud.command.hud.background_color_status", toHex(current)));
+                    return 1;
+                })
+                .then(ClientCommandManager.argument("hex", StringArgumentType.word())
+                        .executes(ctx -> {
+                            String raw = StringArgumentType.getString(ctx, "hex");
+                            Integer rgb = parseHexColor(raw);
+                            if (rgb == null) {
+                                ctx.getSource().sendError(Text.translatable(
+                                        "crophud.command.hud.background_color_invalid", raw));
+                                return 0;
+                            }
+                            CropHudMod.hudPositionStore().setBackgroundColor(rgb);
+                            ctx.getSource().sendFeedback(Text.translatable(
+                                    "crophud.command.hud.background_color_set", toHex(rgb)));
+                            return 1;
                         }));
+    }
+
+    // /hud background opacity <0-100>
+    private static LiteralArgumentBuilder<FabricClientCommandSource> buildBackgroundOpacity(String lit) {
+        return ClientCommandManager.literal(lit)
+                .executes(ctx -> {
+                    int current = CropHudMod.hudPositionStore().getBackgroundOpacity();
+                    ctx.getSource().sendFeedback(Text.translatable(
+                            "crophud.command.hud.background_opacity_status", current));
+                    return 1;
+                })
+                .then(ClientCommandManager.argument("percent", IntegerArgumentType.integer(0, 100))
+                        .executes(ctx -> {
+                            int percent = IntegerArgumentType.getInteger(ctx, "percent");
+                            CropHudMod.hudPositionStore().setBackgroundOpacity(percent);
+                            ctx.getSource().sendFeedback(Text.translatable(
+                                    "crophud.command.hud.background_opacity_set", percent));
+                            return 1;
+                        }));
+    }
+
+    // /hud background image on|off  — use config/crophud/background.png instead of a color fill
+    private static LiteralArgumentBuilder<FabricClientCommandSource> buildBackgroundImage(
+            String lit, String onLit, String offLit) {
+        return ClientCommandManager.literal(lit)
+                .executes(ctx -> {
+                    boolean current = CropHudMod.hudPositionStore().isUseImageBackground();
+                    ctx.getSource().sendFeedback(Text.translatable(
+                            "crophud.command.hud.background_image_status",
+                            Text.translatable(current
+                                    ? "crophud.command.hud.background_on"
+                                    : "crophud.command.hud.background_off")));
+                    return 1;
+                })
+                .then(ClientCommandManager.literal(onLit)
+                        .executes(ctx -> {
+                            CropHudMod.hudPositionStore().setUseImageBackground(true);
+                            ctx.getSource().sendFeedback(Text.translatable(
+                                    "crophud.command.hud.background_image_set",
+                                    Text.translatable("crophud.command.hud.background_on")));
+                            ctx.getSource().sendFeedback(Text.translatable(
+                                    "crophud.command.hud.background_image_hint"));
+                            return 1;
+                        }))
+                .then(ClientCommandManager.literal(offLit)
+                        .executes(ctx -> {
+                            CropHudMod.hudPositionStore().setUseImageBackground(false);
+                            ctx.getSource().sendFeedback(Text.translatable(
+                                    "crophud.command.hud.background_image_set",
+                                    Text.translatable("crophud.command.hud.background_off")));
+                            return 1;
+                        }));
+    }
+
+    /** Parses an RRGGBB (optionally "#"-prefixed) color string; returns null when invalid. */
+    private static Integer parseHexColor(String raw) {
+        String hex = raw.startsWith("#") ? raw.substring(1) : raw;
+        if (hex.length() != 6) return null;
+        try {
+            return Integer.parseInt(hex, 16);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private static String toHex(int rgb) {
+        return String.format("%06X", rgb & 0xFFFFFF);
     }
 }
