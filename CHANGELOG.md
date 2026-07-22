@@ -1,5 +1,32 @@
 # 변경 이력
 
+## [v1.0.2] — 2026-07-22
+
+### 📦 변경 사항
+- 👷 ci: VirusTotal 검사 결과를 CHANGELOG.md에도 링크로 첨부
+
+- CHANGELOG.md 생성 방식을 전체 재생성(--output)에서 증분 방식
+  (--current --prepend)으로 변경 — 과거 섹션이 다음 릴리즈 때 통째로
+  재생성되며 사라지지 않도록 함
+- virustotal.yml이 스캔 완료 후 해당 태그의 CHANGELOG.md 섹션 아래에
+  jar별 VirusTotal 분석 링크를 삽입하고 커밋/푸시하도록 추가
+- 삽입 스크립트는 실제 CHANGELOG.md 스냅샷으로 로컬 검증 완료
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+
+- 버전 v1.0.1 빌드 카운터 업데이트 [skip ci]
+
+- 👷 ci: VirusTotal 자동 검사 기능 제거
+
+- virustotal.yml 삭제
+- CHANGELOG.md 생성 방식을 원래의 전체 재생성(--output)으로 복원
+  (--current --prepend은 VirusTotal 링크 삽입을 위해서만 필요했음)
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+
+- 버전 v1.0.2 빌드 카운터 업데이트 [skip ci]
+
+
 ## [v1.0.0] — 2026-07-22
 
 ### 📦 변경 사항
@@ -177,6 +204,8 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
 
 - 버전 v1.0.0 빌드 카운터 업데이트 [skip ci]
+
+- CHANGELOG.md v1.0.0 업데이트 [skip ci]
 
 
 
