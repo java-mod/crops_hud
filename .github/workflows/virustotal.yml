@@ -2,8 +2,14 @@ name: VirusTotal Scan
 
 # Runs after build.yml's `release` job publishes a GitHub Release (draft defaults to
 # false in softprops/action-gh-release, so creating it fires this `release: published`
-# event). Scans every attached .jar with VirusTotal and appends the analysis link(s)
-# to the release body — see https://github.com/crazy-max/ghaction-virustotal.
+# event). Scans every attached .jar with VirusTotal, appends the analysis link(s) to
+# the release body, and also inserts them into CHANGELOG.md under that release's
+# section — see https://github.com/crazy-max/ghaction-virustotal.
+#
+# CHANGELOG.md is maintained by build.yml with `git-cliff --prepend` (new release
+# sections are prepended, past sections are left untouched), so the VirusTotal link
+# block inserted here for this release survives future releases instead of being
+# wiped out by a full changelog regeneration.
 
 permissions:
   contents: read
@@ -17,12 +23,66 @@ jobs:
   virustotal:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # required to append the analysis link(s) to the release body
+      contents: write # required to write the release body and CHANGELOG.md
     steps:
       - name: VirusTotal Scan
+        id: vt
         uses: crazy-max/ghaction-virustotal@v5
         with:
           vt_api_key: ${{ secrets.VT_API_KEY }}
           update_release_body: true
           files: |
             \.jar$
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Insert VirusTotal links into CHANGELOG.md
+        env:
+          VT_ANALYSIS: ${{ steps.vt.outputs.analysis }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          python3 - <<'PY'
+          import os
+          import re
+
+          analysis = os.environ["VT_ANALYSIS"]
+          tag = os.environ["RELEASE_TAG"]
+
+          pairs = [p.split("=", 1) for p in analysis.split(",") if "=" in p]
+          if not pairs:
+              raise SystemExit(f"No VirusTotal analysis results found (raw: {analysis!r})")
+
+          lines = ["", "**🛡️ VirusTotal 검사 결과**"]
+          for asset, url in pairs:
+              lines.append(f"- [{asset.strip()}]({url.strip()})")
+          block = "\n".join(lines) + "\n"
+
+          path = "CHANGELOG.md"
+          with open(path, encoding="utf-8") as f:
+              content = f.read()
+
+          heading = re.compile(rf"^(## \[{re.escape(tag)}\].*)$", re.MULTILINE)
+          match = heading.search(content)
+          if not match:
+              raise SystemExit(f"Could not find a CHANGELOG.md heading for tag {tag!r}")
+
+          insert_at = match.end()
+          content = content[:insert_at] + "\n" + block + content[insert_at:]
+
+          with open(path, "w", encoding="utf-8") as f:
+              f.write(content)
+
+          print(f"Inserted {len(pairs)} VirusTotal link(s) under {tag} in CHANGELOG.md")
+          PY
+
+      - name: Commit CHANGELOG.md
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md
+          git diff --staged --quiet || \
+            git commit -m "📝 docs: ${{ github.event.release.tag_name }} VirusTotal 검사 링크 추가 [skip ci]"
+          git push origin main
