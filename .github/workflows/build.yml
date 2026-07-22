@@ -178,11 +178,11 @@ jobs:
           config: cliff.toml
           args: --current --strip header
 
-      - name: Update CHANGELOG.md (prepend new release)
+      - name: Generate full CHANGELOG.md
         uses: orhun/git-cliff-action@v4
         with:
           config: cliff.toml
-          args: --current --prepend CHANGELOG.md
+          args: --output CHANGELOG.md
 
       - name: Commit CHANGELOG.md
         run: |
